@@ -49,15 +49,18 @@ var updates_per_frame = 15;
 
 
 function create_a_new_one() {
+    transform = d3.zoomIdentity;
     run_function_and_measure_runtime(init,"init");
     run_function_and_measure_runtime(update,"update");
     run_function_and_measure_runtime(draw,"draw");
 }
 
-canvas
-    //.call(d3.drag().subject(dragsubject).on("drag", dragged))
-    .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
-    .call(draw);
+function init_percolation() {
+    canvas
+        //.call(d3.drag().subject(dragsubject).on("drag", dragged))
+        .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
+        .call(draw);
+}
 
 function zoomed() {
   transform = d3.event.transform;
@@ -128,16 +131,11 @@ function draw() {
     cluster_ids.sort(function(a, b) {
         return cluster_sizes[b]-cluster_sizes[a];
     });
-    //console.log("");
-    //for(let cluster_id = 0; cluster_id < cluster_coordinates.length; cluster_id++)
-    //{
-    //    console.log(cluster_ids[cluster_id],cluster_sizes[cluster_ids[cluster_id]]);
-    //}
-    //
+
+    // decide what to do with the coloring
     let color_behavior = get_color_behavior();
     
-    //let color_behavior = document.querySelector('input[name="color"]:checked').value
-
+    // draw the sites according to their clusters
     for(let i = 0; i < cluster_coordinates.length; i++)
     {
         if (   (
