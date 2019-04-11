@@ -27,17 +27,19 @@ function run_function_and_measure_runtime(func,name)
 var sites = [];
 var clusters = [];
 let nnz_positions = [];
-let pixel_width = 1;
+let pixel_width = 0.5;
 let size_of_cluster = {};
 
+let cluster_coordinates = [];
+
 let p = 0.59274,
-    sidelength = 1000;
+    sidelength = 500;
 p = 0.59; 
 let N = sidelength*sidelength;
 let n_clusters = 0;
 let color = d3.scaleOrdinal(d3.schemeDark2);
 
-var width = sidelength*pixel_width, i
+var width = sidelength*pixel_width, 
     height = sidelength*pixel_width;
 var canvas = d3.select('#container')
   .append('canvas')
@@ -73,13 +75,6 @@ function zoomed() {
   draw();
 }
 
-
-//function play() {
-//    main_timer = d3.interval(function() {
-//            draw();
-//            }, 100);
-//}
-
 function fill4(x_,y_,this_cluster) {
     let stack = [ [x_,y_] ];
 
@@ -90,6 +85,7 @@ function fill4(x_,y_,this_cluster) {
         let y = pos[1];
         if ((sites[index(x,y)] == 1) && clusters[index(x,y)] == -1)
         {
+            cluster_coordinates[this_cluster].push([x,y]);
             clusters[index(x,y)] = this_cluster;
             size_of_cluster[this_cluster]++;
 
@@ -114,6 +110,7 @@ function update() {
         let this_cluster = n_clusters;
         if (clusters[index(x,y)] < 0)
         {
+            cluster_coordinates.push([]);
             size_of_cluster[this_cluster] = 0;
             fill4(x,y,this_cluster);
             n_clusters++;
@@ -127,20 +124,22 @@ function draw() {
     ctx.save();
 
     // delete all that was drawn
-    let bg_val = 0;
+    let bg_val = 255;
     ctx.fillStyle = "rgb("+bg_val+","+bg_val+","+bg_val+")";
     ctx.fillRect( 0, 0, width, height );
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
 
-    nnz_positions.forEach(function(pos) {
-        let x = pos[0];
-        let y = pos[1];
-        let this_cluster = clusters[index(x,y)];
-        ctx.fillStyle = color(this_cluster);
-        ctx.fillRect( x*pixel_width, y*pixel_width, pixel_width, pixel_width );
+    for(let cluster_id = 0; cluster_id < cluster_coordinates.length; cluster_id++)
+    {
+        ctx.fillStyle = color(cluster_id);
+        cluster_coordinates[cluster_id].forEach(function(pos) {
+            let x = pos[0];
+            let y = pos[1];
+            ctx.fillRect( x*pixel_width, y*pixel_width, pixel_width, pixel_width );
+        });
+    }
 
-    });
     ctx.restore();
 }
 
@@ -152,7 +151,9 @@ function init(){
     sites.length = 0;
     clusters.length = 0;
     nnz_positions.length = 0;
+    cluster_coordinates.length = 0;
     size_of_cluster = {};
+    n_clusters = 0;
     for(let i=0; i<sidelength; i++)
     {
         for(let j=0; j<sidelength; j++)
