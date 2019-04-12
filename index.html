@@ -3,12 +3,16 @@
 <script src="./libs/d3.v4.min.js"></script>
 <script src="./libs/d3-scale-chromatic.v1.min.js"></script>
 <script src="./libs/d3-color.v1.min.js"></script>
+<script src="./libs/simple_plot.js"></script>
 <link rel="stylesheet" type="text/css" href="./css/toggle.css">
 <link rel="stylesheet" type="text/css" href="./css/slider.css">
 </head>
 <body>
 
-    <div id="container"></div>
+    <div id="percolation_container" style="float:left;"></div>
+    <div id="largest_component_container" style="float:left;"></div>
+    <div id="variance_container"></div>
+    <div id="histogram_container"></div>
     <button onclick="create_a_new_one()" >gimme a new one</button>
 
     <!-- <label class="switch">
@@ -46,7 +50,7 @@ console.log(radios);
 for(let i = 0; i<radios.length; i++)
     radios[i].onchange = draw;
 
-init_percolation();
+initialize_percolation_canvas();
 create_a_new_one();
 </script>
 

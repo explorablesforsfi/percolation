@@ -14,18 +14,41 @@ function run_function_and_measure_runtime(func,name)
     
 }
 
+function log10(a)
+{
+    return Math.log(a)/Math.log(10);
+}
+
+function histogram(sizes)
+{
+    let hist = {};
+    sizes.forEach(function(s){
+        if (!hist.hasOwnProperty(s))
+            hist[s] = 1;
+        else
+            hist[s]++;
+    });
+    let x = [];
+    let y = [];
+    Reflect.ownKeys(hist).forEach(function(key){
+        x.push(log10(key));
+        y.push(log10(hist[key]));
+    });
+    return { 'x': x, 'y':y };
+}
+
 
 // explorable definitions
 //
 var sites = [];               // one-dimensional array containing all sites (1 if occupied, 0 if not)
 var clusters = [];            // for each site, contains the id of the cluster it belongs to (-1 if None)
 let nnz_positions = [];       // save (x,y)-coordinates of occupied sites
-let pixel_width = 50;         // width of one site in pixels 
+let pixel_width = 2;          // width of one site in pixels 
 let size_of_cluster = [];     // list mapping cluster-id to its size
 let cluster_coordinates = []; // list mapping cluster-id to a list of its occupying sites' coordinates 
  
 let p = 0.59274,               // occupation probability 
-    sidelength = 10;           // how many sites per side of the square
+    sidelength = 250;           // how many sites per side of the square
 
 let N = sidelength*sidelength; // total number of sites
 let n_clusters = 0;            // current number of clusters
@@ -33,7 +56,8 @@ let color = d3.scaleOrdinal(d3.schemeDark2); // colorscheme
 
 var width = sidelength*pixel_width,   // canvas width
     height = sidelength*pixel_width;  // canvas height
-var canvas = d3.select('#container')
+var plot_width = 250, plot_height=250;
+var canvas = d3.select('#percolation_container')
   .append('canvas')
   .attr('width', width)
   .attr('height', height);
@@ -41,13 +65,59 @@ var canvas = d3.select('#container')
 var ctx = canvas.node().getContext('2d');
 var transform = d3.zoomIdentity;
 
+// ================= plot canvases ============
+
+var largest_component_canvas = d3.select('#largest_component_container')
+  .append('canvas')
+  .attr('width', plot_width)
+  .attr('height', plot_height);
+
+var largest_component_ctx = largest_component_canvas.node().getContext('2d');
+var lc_pl = new simplePlot(largest_component_ctx,plot_width,plot_height,30,16);
+lc_pl.xlabel('occupation probability');
+lc_pl.ylabel('size largest component');
+lc_pl.xlimlabels(['0','1']);
+lc_pl.ylimlabels(['0','N']);
+lc_pl.rangeX([0,1]);
+lc_pl.rangeY([0,N]);
+var lc_x = [];
+var lc_y = [];
+
+var variance_canvas = d3.select('#variance_container')
+  .append('canvas')
+  .attr('width', plot_width)
+  .attr('height', plot_height);
+
+var variance_ctx = variance_canvas.node().getContext('2d');
+var var_pl = new simplePlot(variance_ctx,plot_width,plot_height,30,16);
+var_pl.xlabel('occupation probability');
+var_pl.ylabel('mean remaining comp. size');
+var_pl.xlimlabels(['0','1']);
+var_pl.ylimlabels(['0','20']);
+var_pl.rangeX([0,1]);
+var_pl.rangeY([0,20]);
+var var_x = [];
+var var_y = [];
 
 
+var hist_canvas = d3.select('#histogram_container')
+  .append('canvas')
+  .attr('width', plot_width)
+  .attr('height', plot_height);
 
-var main_timer;
+var hist_ctx = hist_canvas.node().getContext('2d');
+var h_pl = new simplePlot(hist_ctx,plot_width,plot_height,30,16);
+h_pl.xlabel('log10(component size)');
+h_pl.ylabel('log10(count)');
+//h_pl.xlimlabels(['0','log10(N)']);
+//h_pl.ylimlabels(['0','(1/2)log10(N)']);
+//h_pl.rangeX([0,log10(N)]);
+//h_pl.rangeY([0,Math.sqrt(N)]);
+var h_x = [];
+var h_y = [];
 
-var updates_per_frame = 15;
 
+// ============== percolation functions ===============
 
 function create_a_new_one() {
     transform = d3.zoomIdentity;
@@ -56,10 +126,12 @@ function create_a_new_one() {
     run_function_and_measure_runtime(draw,"draw");
 }
 
-canvas
-    //.call(d3.drag().subject(dragsubject).on("drag", dragged))
-    .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
-    .call(draw);
+function initialize_percolation_canvas() {
+    canvas
+        //.call(d3.drag().subject(dragsubject).on("drag", dragged))
+        .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
+        .call(draw);
+}
 
 function zoomed() {
   transform = d3.event.transform;
@@ -131,6 +203,24 @@ function draw() {
         return cluster_sizes[b]-cluster_sizes[a];
     });
 
+
+    // save x/y values of largest component for plot
+    if (!( typeof cluster_sizes[cluster_ids[0]] === 'undefined' || cluster_sizes[cluster_ids[0]] === null )){
+        lc_x.push(p);
+        lc_y.push(cluster_sizes[cluster_ids[0]]);
+        var_x.push(p);
+        if (cluster_sizes.length<2)
+            var_y.push(0);
+        else
+            var_y.push(d3.mean(cluster_sizes)-cluster_sizes[cluster_ids[0]]/cluster_sizes.length);
+
+        let hist = histogram(cluster_sizes);
+        h_x = hist.x;
+        h_y = hist.y;
+        
+        
+    }
+
     // decide what to do with the coloring
     let color_behavior = get_color_behavior();
     
@@ -155,6 +245,11 @@ function draw() {
     }
 
     ctx.restore();
+
+    // plot
+    plot_largest_component();
+    plot_component_variance();
+    plot_component_histogram();
 }
 
 function index(i,j){
@@ -166,7 +261,7 @@ function init(){
     clusters.length = 0;
     nnz_positions.length = 0;
     cluster_coordinates.length = 0;
-    size_of_cluster = {};
+    size_of_cluster.length = 0;
     n_clusters = 0;
     for(let i=0; i<sidelength; i++)
     {
@@ -184,4 +279,25 @@ function init(){
             clusters.push(-1);
         }
     }
+}
+
+// ================= plot functions ===========
+
+function plot_largest_component()
+{
+    lc_pl.scatter('lc',lc_x,lc_y,'o','rgba(27,158,119,1.0)',2);
+    lc_pl.plot('probability_marker',[p,p],[0,N],[],'rgba(102,102,102,1.0)');
+
+}
+
+function plot_component_variance()
+{
+    var_pl.scatter('var',var_x,var_y,'o','rgba(217,95,2,1.0)',2);
+    var_pl.plot('probability_marker',[p,p],[0,20],[],'rgba(102,102,102,1.0)');
+
+}
+function plot_component_histogram()
+{
+    h_pl.scatter('hist',h_x,h_y,'s','rgba(102,102,102,1.0)',5);
+
 }
