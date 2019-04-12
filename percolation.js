@@ -1,4 +1,6 @@
+// some debugging function
 let show_runtime = false;
+
 function run_function_and_measure_runtime(func,name)
 {
     let t0 = performance.now();
@@ -13,25 +15,24 @@ function run_function_and_measure_runtime(func,name)
 }
 
 
-var sites = [];
-var clusters = [];
-let nnz_positions = [];
-let pixel_width = 2;
-let size_of_cluster = {};
-let use_color = true;
+// explorable definitions
+//
+var sites = [];               // one-dimensional array containing all sites (1 if occupied, 0 if not)
+var clusters = [];            // for each site, contains the id of the cluster it belongs to (-1 if None)
+let nnz_positions = [];       // save (x,y)-coordinates of occupied sites
+let pixel_width = 50;         // width of one site in pixels 
+let size_of_cluster = [];     // list mapping cluster-id to its size
+let cluster_coordinates = []; // list mapping cluster-id to a list of its occupying sites' coordinates 
+ 
+let p = 0.59274,               // occupation probability 
+    sidelength = 10;           // how many sites per side of the square
 
-let cluster_coordinates = [];
+let N = sidelength*sidelength; // total number of sites
+let n_clusters = 0;            // current number of clusters
+let color = d3.scaleOrdinal(d3.schemeDark2); // colorscheme
 
-let p = 0.59274,
-    sidelength = 250;
-p = 0.54; 
-
-let N = sidelength*sidelength;
-let n_clusters = 0;
-let color = d3.scaleOrdinal(d3.schemeDark2);
-
-var width = sidelength*pixel_width, 
-    height = sidelength*pixel_width;
+var width = sidelength*pixel_width,   // canvas width
+    height = sidelength*pixel_width;  // canvas height
 var canvas = d3.select('#container')
   .append('canvas')
   .attr('width', width)
@@ -55,12 +56,10 @@ function create_a_new_one() {
     run_function_and_measure_runtime(draw,"draw");
 }
 
-function init_percolation() {
-    canvas
-        //.call(d3.drag().subject(dragsubject).on("drag", dragged))
-        .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
-        .call(draw);
-}
+canvas
+    //.call(d3.drag().subject(dragsubject).on("drag", dragged))
+    .call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoomed))
+    .call(draw);
 
 function zoomed() {
   transform = d3.event.transform;
@@ -103,7 +102,7 @@ function update() {
         if (clusters[index(x,y)] < 0)
         {
             cluster_coordinates.push([]);
-            size_of_cluster[this_cluster] = 0;
+            size_of_cluster.push(0);
             fill4(x,y,this_cluster);
             n_clusters++;
         }
