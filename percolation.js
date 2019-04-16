@@ -58,10 +58,13 @@ let size_of_cluster = [];     // list mapping cluster-id to its size
 let cluster_coordinates = []; // list mapping cluster-id to a list of its occupying sites' coordinates 
 let cluster_ids;
 let cluster_sizes;
+let cluster_has_top_site = [];
+let cluster_has_bottom_site = [];
 
  
 let p = 0.59274,               // occupation probability 
-    sidelength = 250;           // how many sites per side of the square
+    sidelength = 240;           // how many sites per side of the square
+var color_behavior = "color_all";
 
 let N = sidelength*sidelength; // total number of sites
 let n_clusters = 0;            // current number of clusters
@@ -69,7 +72,7 @@ let color = d3.scaleOrdinal(d3.schemeDark2); // colorscheme
 
 var width = sidelength*pixel_width,   // canvas width
     height = sidelength*pixel_width;  // canvas height
-var plot_width = 250, plot_height=250;
+var plot_width = width/2, plot_height=width/2;
 var canvas = d3.select('#percolation_container')
                .append('canvas')
                .attr('width', width)
@@ -90,9 +93,9 @@ var largest_component_canvas = d3.select('#largest_component_container')
 
 var largest_component_ctx = largest_component_canvas.node().getContext('2d');
 retina(largest_component_canvas,largest_component_ctx,plot_width,plot_height);
-var lc_pl = new simplePlot(largest_component_ctx,plot_width,plot_height,{margin:30,fontsize:16});
-lc_pl.xlabel('occupation probability');
-lc_pl.ylabel('size largest component');
+var lc_pl = new simplePlot(largest_component_ctx,plot_width,plot_height,{margin:30,fontsize:12});
+//lc_pl.xlabel('occupation probability');
+lc_pl.ylabel('largest component size');
 lc_pl.xlimlabels(['0','1']);
 lc_pl.ylimlabels(['0','N']);
 lc_pl.xlim([0,1]);
@@ -107,9 +110,9 @@ var variance_canvas = d3.select('#variance_container')
 
 var variance_ctx = variance_canvas.node().getContext('2d');
 retina(variance_canvas, variance_ctx,plot_width,plot_height)
-var var_pl = new simplePlot(variance_ctx,plot_width,plot_height,{margin:30,fontsize:16});
+var var_pl = new simplePlot(variance_ctx,plot_width,plot_height,{margin:30,fontsize:12});
+var_pl.ylabel('mean non-largest comp. size');
 var_pl.xlabel('occupation probability');
-var_pl.ylabel('mean remaining comp. size');
 var_pl.xlimlabels(['0','1']);
 var_pl.ylimlabels(['0','20']);
 var_pl.xlim([0,1]);
@@ -125,8 +128,8 @@ var hist_canvas = d3.select('#histogram_container')
 
 var hist_ctx = hist_canvas.node().getContext('2d');
 retina(hist_canvas, hist_ctx,plot_width,plot_height);
-var h_pl = new simplePlot(hist_ctx,plot_width,plot_height,{margin:30,fontsize:16});
-h_pl.xlabel('component size');
+var h_pl = new simplePlot(hist_ctx,plot_width,plot_height,{margin:30,fontsize:12});
+h_pl.xlabel('non-largest comp. size');
 h_pl.ylabel('count');
 h_pl.xscale('log');
 h_pl.yscale('log');
@@ -138,6 +141,11 @@ var h_x = [];
 var h_y = [];
 
 // ============== percolation functions ===============
+//
+//
+function init_for_growing_occupation() {
+  all_indices = d3.shuffle(d3.range(N));
+}
 
 function create_a_new_one() {
     transform = d3.zoomIdentity;
@@ -145,6 +153,10 @@ function create_a_new_one() {
     run_function_and_measure_runtime(update,"update");
     run_function_and_measure_runtime(analyze_cluster,"analyze_cluster");
     run_function_and_measure_runtime(draw,"draw");
+    // plot
+    plot_largest_component();
+    plot_component_variance();
+    plot_component_histogram();
 }
 
 function initialize_percolation_canvas() {
@@ -158,7 +170,6 @@ function zoomed() {
   transform = d3.event.transform;
   draw();
 }
-
 function fill4(x_,y_,this_cluster) {
     let stack = [ [x_,y_] ];
 
@@ -172,6 +183,10 @@ function fill4(x_,y_,this_cluster) {
             cluster_coordinates[this_cluster].push([x,y]);
             clusters[index(x,y)] = this_cluster;
             size_of_cluster[this_cluster]++;
+            if (y == 0)
+              cluster_has_top_site[this_cluster] = true;
+            else if (y == sidelength-1)
+              cluster_has_bottom_site[this_cluster] = true;
 
             if (y+1 < sidelength)
                 stack.push([x,y+1]);
@@ -195,6 +210,8 @@ function update() {
         {
             cluster_coordinates.push([]);
             size_of_cluster.push(0);
+            cluster_has_top_site.push(false);
+            cluster_has_bottom_site.push(false);
             fill4(x,y,this_cluster);
             n_clusters++;
         }
@@ -243,20 +260,31 @@ function draw() {
     ctx.fillStyle = "rgb("+site_val+","+site_val+","+site_val+")";
 
 
-    // decide what to do with the coloring
-    let color_behavior = get_color_behavior();
-    
     // draw the sites according to their clusters
     for(let i = 0; i < cluster_coordinates.length; i++)
     {
-        if (   (
+        if (   
+               (
                   (color_behavior == "color_largest") && ( i == 0)
                )
              ||
                (color_behavior == "color_all")
+             ||
+               (
+                  (color_behavior == "color_spanning") && 
+                  cluster_has_top_site[cluster_ids[i]] &&
+                  cluster_has_bottom_site[cluster_ids[i]]
+               )
              )
             ctx.fillStyle = color(i);
-        else if ( (color_behavior == "color_largest") && ( i > 0))
+      /*
+        else if ( 
+                   ((color_behavior == "color_largest") && ( i > 0))
+                 || 
+                   ((color_behavior == "color_spanning") && ( i > 0))
+                )
+                */
+         else
             ctx.fillStyle = "rgb("+site_val+","+site_val+","+site_val+")";
 
         cluster_coordinates[cluster_ids[i]].forEach(function(pos) {
@@ -268,10 +296,6 @@ function draw() {
 
     ctx.restore();
 
-    // plot
-    plot_largest_component();
-    plot_component_variance();
-    plot_component_histogram();
 }
 
 function index(i,j){
@@ -283,6 +307,8 @@ function coords(i){
 }
 
 function init(){
+    cluster_has_top_site.length = 0;
+    cluster_has_bottom_site.length = 0;
     sites.length = 0;
     clusters.length = 0;
     nnz_positions.length = 0;
@@ -339,11 +365,22 @@ function plot_component_variance()
 }
 function plot_component_histogram()
 {
-    h_pl.scatter('hist',h_x,h_y,{marker:'s',markercolor:'rgba(102,102,102,1.0)',markerradius:4});
+  
+    let _h_x = h_x.map(tmp => tmp);
+    let _h_y = h_y.map(tmp => tmp);
+    let ndx = h_x.indexOf(d3.max(h_x));
+    _h_y.pop(ndx);
+    _h_x.pop(ndx);
+    //let max_x = [ d3.max(h_x) ];
+    //let max_y = [ h_y[h_x.indexOf(max_x[0])] ];
+    if (h_pl.xscale() == "lin")
+      h_pl.xlim(d3.extent(_h_x));
 
-    let max_x = [ d3.max(h_x) ];
-    let max_y = [ h_y[h_x.indexOf(max_x[0])] ];
+    if (h_pl.yscale() == "lin")
+      h_pl.ylim(d3.extent(_h_y));
 
-    h_pl.scatter('max',max_x,max_y,{marker:'s',markercolor:'rgba(27,158,119,1.0)',markerradius:4});
+    h_pl.scatter('hist',_h_x,_h_y,{marker:'s',markercolor:'rgba(102,102,102,1.0)',markerradius:4});
+
+    //h_pl.scatter('max',max_x,max_y,{marker:'s',markercolor:'rgba(27,158,119,1.0)',markerradius:4});
 
 }

@@ -4,55 +4,27 @@
 <script src="./libs/d3-scale-chromatic.v1.min.js"></script>
 <script src="./libs/d3-color.v1.min.js"></script>
 <script src="./libs/simple_plot.js"></script>
-<link rel="stylesheet" type="text/css" href="./css/toggle.css">
-<link rel="stylesheet" type="text/css" href="./css/slider.css">
+<script src="./libs/widget.v3.4.js"></script>
+<link rel="stylesheet" type="text/css" href="./css/widgets_white_bg.css">
 </head>
 <body>
 
-    <div id="percolation_container" style="float:left;"></div>
-    <div id="largest_component_container" style="float:left;"></div>
-    <div id="histogram_container"></div>
-    <div id="variance_container"></div>
-    <button onclick="create_a_new_one()" >gimme a new one</button>
-
-    <!-- <label class="switch">
-    <input type="checkbox" onchange="toggle_color()" checked="true">
-      <span class="toggle round"></span>
-    </label> -->
-    <div id="rates">
-      <input type="radio" id="color_none" name="color" value="color_none"> Color none
-      <input type="radio" id="color_largest" name="color" value="color_largest"> Color largest
-      <input type="radio" id="color_all" name="color" value="color_all" checked="checked"> Color all
+    <div id="all_container">
+        <div id="control_container" style="float:left; margin-right: 8px;"></div>
+        <div id="histogram_container"></div>
+        <br/>
+        <div id="percolation_container" style="float:left; border: 1px solid black; margin-right: 8px;"></div>
+        <div id="largest_component_container" style="float:left;"></div>
+        <div id="variance_container"></div>
     </div>
-    <div class="slidecontainer">
-      <input type="range" min="0" max="1000" value="592" class="slider" id="p_range">
-    </div>
-    <div id="show_p"></div>
 
 <script src="percolation.js"></script>
 <script>
-var p_slider = document.getElementById("p_range");
-var p_output = document.getElementById("show_p");
-p_output.innerHTML = "p = " + p_slider.value/1000.0;
-p_slider.oninput = function() {
-  p = +this.value/1000;
-  create_a_new_one();
-  p_output.innerHTML = "p = " + this.value/1000.0;
-}
-
-function get_color_behavior()
-{
-    return document.querySelector('input[name="color"]:checked').value;
-}
-
-var radios = document.querySelectorAll('input[type=radio][name="color"]');
-console.log(radios);
-for(let i = 0; i<radios.length; i++)
-    radios[i].onchange = draw;
-
 initialize_percolation_canvas();
 create_a_new_one();
+d3.selectAll("#all_container").attr("style","max-width: "+(width+plot_width+10));
 </script>
+<script src="./gui/gui.js"></script>
 
 
 </body>

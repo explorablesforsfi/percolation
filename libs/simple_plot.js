@@ -31,14 +31,14 @@ class simplePlot {
     this.yScaleType = config.yScaleType;
 
     if (this.xScaleType == 'log')
-      this.xScale = d3.scaleLog().range([this.margin, this.w - this.margin]);
+      this.xScale = d3.scaleLog().range([this.margin, this.w - 2]);
     else
-      this.xScale = d3.scaleLinear().range([this.margin, this.w - this.margin]);
+      this.xScale = d3.scaleLinear().range([this.margin, this.w - 2]);
 
     if (this.yScaleType == 'log')
-      this.yScale = d3.scaleLog().range([this.h - this.margin, this.margin]);
+      this.yScale = d3.scaleLog().range([this.h - this.margin,2]);
     else
-      this.yScale = d3.scaleLinear().range([this.h - this.margin, this.margin]);
+      this.yScale = d3.scaleLinear().range([this.h - this.margin,2]);
   }
 
   scatter(label, x, y, user_config={})
@@ -188,9 +188,9 @@ class simplePlot {
     this.xScaleType = scaletype;
 
     if (this.xScaleType == 'log')
-      this.xScale = d3.scaleLog().range([this.margin, this.w - this.margin]);
+      this.xScale = d3.scaleLog().range([this.margin, this.w - 2]);
     else
-      this.xScale = d3.scaleLinear().range([this.margin, this.w - this.margin]);
+      this.xScale = d3.scaleLinear().range([this.margin, this.w - 2]);
 
     if (!(this.range_x === null))
       this.xScale.domain(this.range_x);
@@ -202,9 +202,9 @@ class simplePlot {
     this.yScaleType = scaletype;
 
     if (this.yScaleType == 'log')
-      this.yScale = d3.scaleLog().range([this.h - this.margin, this.margin]);
+      this.yScale = d3.scaleLog().range([this.h - this.margin, 2]);
     else
-      this.yScale = d3.scaleLinear().range([this.h - this.margin, this.margin]);
+      this.yScale = d3.scaleLinear().range([this.h - this.margin, 2]);
 
     if (!(this.range_y === null))
       this.yScale.domain(this.range_y);
@@ -232,8 +232,8 @@ class simplePlot {
   {
     this.w = width;
     this.h = height;
-    this.xScale.range([this.margin, this.w - this.margin]);
-    this.yScale.range([this.h - this.margin, this.margin]);
+    this.xScale.range([this.margin, this.w - 2]);
+    this.yScale.range([this.h - this.margin, 2]);
 
     this.draw();
   }
@@ -249,7 +249,7 @@ class simplePlot {
     ctx.clearRect(0, 0, this.w, this.h);
     ctx.save()
     ctx.lineWidth = 0;
-    ctx.rect(mrgn, mrgn, this.w - 2 * mrgn, this.h - 2 * mrgn);
+    ctx.rect(mrgn, 2, this.w - (mrgn+2), this.h - (mrgn+2));
     ctx.stroke();
     ctx.clip();
 
@@ -335,7 +335,7 @@ class simplePlot {
     ctx.setLineDash([]);
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.rect(mrgn, mrgn, this.w - 2 * mrgn, this.h - 2 * mrgn);
+    ctx.rect(mrgn, 2, this.w - (mrgn+2), this.h - (mrgn+2));
     ctx.stroke();
 
     let fsize = this.fsize;
@@ -347,14 +347,20 @@ class simplePlot {
 
 
     if (this.x_label !== null) {
-      ctx.fillText(this.x_label, w / 2, h - fH / 3);
+      let this_label = this.x_label;
+      if (this.xScaleType != 'lin')
+        this_label += " (log scale)"
+      ctx.fillText(this_label, (w-mrgn-2) / 2+mrgn, h - fH / 3);
     }
 
     if (this.y_label !== null) {
+      let this_label = this.y_label;
+      if (this.yScaleType != 'lin')
+        this_label += " (log scale)"
       ctx.save();
-      ctx.translate(1.2 * mrgn - fH, h / 2);
+      ctx.translate(0.8 * mrgn - fH, (h-2-mrgn) / 2+2);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText(this.y_label, 0, 0);
+      ctx.fillText(this_label, 0, 0);
       ctx.restore();
     }
 
@@ -375,7 +381,7 @@ class simplePlot {
       ctx.textAlign = 'left';
       ctx.fillText(xmin, mrgn, (h - mrgn) + fsize);
       ctx.textAlign = 'right';
-      ctx.fillText(xmax, w - mrgn, (h - mrgn) + fsize);
+      ctx.fillText(xmax, w - 2, (h - mrgn) + fsize);
     }
 
     if (this.range_y !== null) {
@@ -394,7 +400,7 @@ class simplePlot {
       ctx.textAlign = 'right';
       ctx.fillText(ymin, mrgn - 0.3 * fsize, (h - mrgn));
       ctx.textAlign = 'right';
-      ctx.fillText(ymax, mrgn - 0.3 * fsize, mrgn + fsize);
+      ctx.fillText(ymax, mrgn - 0.3 * fsize, 2 + fsize);
     }
 
     if (this.draw_legend) {
@@ -466,12 +472,28 @@ class simplePlot {
     }
   }
 
-  stripZeros(s) {
+  stripZeros(s_) {
+    let last_char = s_[s_.length-1];
+    let s = s_;
+    if ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(last_char.toUpperCase())>=0)
+    {
+      s = s.slice(0,s_.length-1);
+    }
+    else
+    {
+      s = s_;
+      last_char = '';
+    }
+
+
     while (s[s.length - 1] == '0') {
       s = s.slice(0, s.length - 1);
     }
     if (s[s.length - 1] == '.')
       s = s.slice(0, s.length - 1);
+
+    s += last_char;
+
     return s;
   }
 }
