@@ -76,7 +76,7 @@
 
 		var toggles = [
 			widget.toggle(t4).label("right").update(function(d){
-          use_growing_occupation = false;
+          use_growing_occupation = !use_growing_occupation;
           create_a_new_one();
       }),
 			widget.toggle(use_log_y).label("right").update(function(d){
