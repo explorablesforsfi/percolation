@@ -1,0 +1,25 @@
+<h2>Site Percolation</h2>
+
+<p>Percolation theory has its origins in the study of porous media: What&#39;s the critical density of a medium such that a liquid can pass through it? It has since found application in epidemiology (how dense does a population have to be for a disease to spread?) or ecology (how many trees per unit area until a forest fire can spread through the whole system?).</p>
+
+<p>All these questions can be formulated as &quot;how many entities per unit area/volume do we need to form a giant component - a component which includes a non-vanishing part of the whole system?&quot;. In this explorable, we demonstrate that there&#39;s a critical density of occupied lattice sites which separates two phases: one where no giant component exists (no liquid can pass through) and one where there exists a giant component (liquid may pass).</p>
+
+<p>&nbsp;</p>
+
+<p style="text-align:center"><iframe align="middle" frameborder="0" height="750" scrolling="yes" src="https://s3.amazonaws.com/complexityexplorer/Explorables/percolation-master/index.html" width="800"></iframe></p>
+
+<p>&nbsp;</p>
+
+<h2>The Model</h2>
+
+<p>On a square lattice of side length L, each of the N = L x L lattice site is occupied with probability p. when two occupied sites touch, they connect to build a component. If a third site touches one of those two, it belongs to the same component and so forth. With increasing occupation probability p larger clusters appear.</p>
+
+<p>It turns out that there&#39;s a <em>critical probability</em> at which a giant spanning component emerges, i.e. spanning from one side of the lattice to the opposite site. We can find this point by investigating all components which are not the giant component: The distribution of their sizes will follow a power-law at the transition point and an exponential decay in either of the disconnected or connected phases. Furthermore, the mean size of these non-giant components peaks at the critical point.</p>
+
+<h2>The Explorable</h2>
+
+<p>In the default mode of the explorable, increasing p leads to adding occupied sites to the current configuration (and removing occupied sites with decreasing p). All components are colored and the size distribution of the non-largest component is shown. You can choose to instead generate a new configuration everytime you change p. If you choose `color none` you will simply see how sites are added/removed when varying p. Note that if you choose `color spanning`, the critical density is easily found by finding the value of p at which first the spanning component jumps in your face.</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
