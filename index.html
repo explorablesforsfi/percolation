@@ -6,10 +6,28 @@
 <script src="./libs/simple_plot.js"></script>
 <script src="./libs/widget.v3.4.js"></script>
 <link rel="stylesheet" type="text/css" href="./css/widgets_white_bg.css">
+<link rel="stylesheet" type="text/css" href="./css/main.css">
 </head>
 <body>
 
     <div id="all_container">
+    <h1>Site Percolation</h1>
+    <p>
+        Percolation theory has its origins in the study of porous media: What's
+        the critical density of a medium such that a liquid can pass through it?
+        It has since found application in epidemiology (how dense does a population
+        have to be for a disease to spread?) or ecology (how many trees per area
+        until a forest fire can spread through the whole system?).
+    </p>
+    <p>
+        All these questions can be formulated as "how many entities per area/volume
+        do we need to form a giant component - a component which includes a non-vanishing
+        part of the whole system?". In this explorable, we demonstrate that there's a
+        critical density of occupied lattice site which separates two phases: one where
+        no giant component exists (no liquid can pass through) and one where there
+        exists a giant component (liquid may pass).
+    </p>
+
         <div id="control_container" style="float:left; margin-right: 8px;"></div>
         <div id="histogram_container"></div>
         <br/>
@@ -17,12 +35,37 @@
         <div id="largest_component_container" style="float:left;"></div>
         <div id="variance_container"></div>
     </div>
+        <br>
+        <div>
+           <i>Developed for 
+               <a href="https://http://complexityexplorer.org">
+                 SFI's Complexity Explorer</a>
+               by
+               <a href="http://benmaier.org">Ben F. Maier</a>
+               in collaboration with the
+               <a href="http://rki.de">Robert Koch-Institute</a>.
+           </i>
+        </div>    
+
+    <h2>The Model</h2>
+    <p>
+        On a square lattice of side length N, each lattice site is occupied with probability p.
+        when two occupied sites touch, they connect to build a component. If a third site touches
+        one of the first, it belongs to the same component and so forth. With increasing
+        occupation probability p clusters can potentially grow.
+    </p>
+
+    <h2>The Explorable</h2>
+    <p>
+    </p>
+
 
 <script src="percolation.js"></script>
 <script>
 initialize_percolation_canvas();
 create_a_new_one();
-d3.selectAll("#all_container").attr("style","max-width: "+(width+plot_width+10));
+d3.selectAll("#all_container").attr("style","max-width: "+(width+plot_width+10)+"; min-width:"+(width+10)+";");
+
 </script>
 <script src="./gui/gui.js"></script>
 
